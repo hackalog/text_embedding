@@ -4,6 +4,7 @@ import os
 import pathlib
 import sys
 from sklearn.datasets.base import Bunch
+from sklearn.base import BaseEstimator
 
 from ..paths import processed_data_path
 from ..logging import logger
@@ -212,3 +213,144 @@ class Dataset(Bunch):
         with open(dataset_fq, 'wb') as fo:
             joblib.dump(self, fo)
         logger.debug(f'Wrote {dataset_filename}')
+
+class DataSource(BaseEstimator):
+    """Representation of a raw dataset"""
+
+    def __init__(self,
+                 name='raw_dataset',
+                 action=None,
+                 load_function=None,
+                 dataset_dir=None,
+                 file_list=None):
+        self.name = name
+        self.action = action
+        self.file_list = file_list
+        self.load_function = load_function
+        self.dataset_dir = dataset_dir
+
+    def fit(self, X=None, y=None):
+        self.available_actions_ = ['generate', 'fetch']
+        if self.action not in self.available_actions_:
+               raise Exception(f'`action` must be one of {self.available_actions_}')
+        if self.file_list is None:
+            self.file_list = []
+        if self.dataset_dir is None:
+            self.dataset_dir = data_path
+
+        self.fetched_ = False
+        self.unpacked_ = False
+        self.processed_ = False
+        self.fitted_ = True
+
+    def fetch(self, fetch_path=None, force=False):
+        """Fetch to raw_data_dir and check hashes
+        """
+        if not hasattr(self, 'fitted_'):
+            raise Exception('must fit before feching')
+
+        if self.fetched_ and force is False:
+            logger.debug(f'Raw Dataset {self.name} is already fetched. Skipping')
+            return
+
+        if fetch_path is None:
+            fetch_path = raw_data_path
+
+        for item in self.file_list:
+            pass
+
+
+    def unpack(self, unpack_path=None, force=False):
+        """Unpack fetched files to interim dir"""
+        if not hasattr(self, 'fitted_'):
+            raise Exception('must fit and fetch before unpack')
+        if not self.fetched_:
+            raise Exception("Must fetch before unpack")
+
+        if self.unpacked_ and force is False:
+            logger.debug(f'Raw Dataset {self.name} is already unpacked. Skipping')
+            return
+
+        if unpack_path is None:
+            unpack_path = interim_data_path
+
+    def process(self, processed_path=None):
+        if not hasattr(self, 'fitted_'):
+            raise Exception('must fit/fetch/unpack before process')
+        if not self.unpacked_:
+            raise Exception("Must fetch/unpack before process")
+
+        if self.processed_ and force is False:
+            logger.debug(f'Raw Dataset {self.name} is already processed. Skipping')
+            return
+        if processed_path is None:
+            processed_path = processed_data_path
+
+    def save(self, path=None, filename="datasets.json", indent=4, sort_keys=True):
+        pass
+
+    @classmethod
+    def load(cls, filename="raw_dataset.json", path=None):
+        """Create a RawDataset from a (saved) json file.
+        """
+        if path is None:
+            path = _MODULE_DIR
+        else:
+            path = pathlib.Path(path)
+
+        with open(path / filename, 'r') as fr:
+            ds = json.load(fr)
+
+        load_function = deserialize_partial(**ds)
+
+        return cls(**ds)
+
+def deserialize_partial(func_dict):
+    """Convert a serialized function call into a partial
+
+    Parameters
+    ----------
+    func_dict: dict containing
+        load_function_name: function name
+        load_function_module: module containing function
+        load_function_args: args to pass to function
+        load_function_kwargs: kwargs to pass to function
+    """
+
+    args = func_dict.get("load_function_args", [])
+    kwargs = func_dict.get("load_function_kwargs", {})
+    base_name = func_dict.get("load_function_name", 'unknown_function')
+    fail_func = partial(unknown_function, base_name)
+    func_mod_name = func_dict.get('load_function_module', None)
+    if func_mod_name:
+        func_mod = importlib.import_module(func_mod_name)
+    else:
+        func_mod = _MODULE
+    func_name = getattr(func_mod, base_name, fail_func)
+    func = partial(func_name, *args, **kwargs)
+
+    return func
+
+def serialize_partial(func):
+    """Serialize a function call to a dictionary.
+
+    Parameters
+    ----------
+    func: partial function.
+
+    Returns
+    -------
+    dict containing:
+        load_function_name: function name
+        load_function_module: fully-qualified module name containing function
+        load_function_args: args to pass to function
+        load_function_kwargs: kwargs to pass to function
+    """
+
+    func = partial(func)
+    entry = {}
+    entry['load_function_module'] = ".".join(jfi.get_func_name(func.func)[0])
+    entry['load_function_name'] = jfi.get_func_name(func.func)[1]
+    entry['load_function_args'] = func.args
+    entry['load_function_kwargs'] = func.keywords
+    return entry
