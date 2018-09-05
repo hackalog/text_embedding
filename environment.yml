@@ -22,5 +22,8 @@ dependencies:
   - nbval
   - pandas
   - requests
+  - matplotlib
+  - seaborn
+  - gensim
   - python>=3.6
 
