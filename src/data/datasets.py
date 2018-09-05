@@ -119,18 +119,28 @@ def get_dataset_filename(ds_dict):
 
 def build_dataset_dict(hash_type='sha1', hash_value=None, url=None,
                        name=None, file_name=None, from_txt=None):
-    """fetch a URL, return a dataset dictionary entry
+    """Build a raw dataset dictionary entry for a file.
+
+    This will fetch the file if `url` is specified.
+
+    If `hash_value` is specified, the file hash will be checked.
+    Otherwise, the hash will be computed and returned.
 
     hash_type: {'sha1', 'md5', 'sha256'}
     hash_value: string or None
-        if None, hash will be computed from downloaded file
+        Hash to use when validating the specified file.
+        if None, the hash will be computed from downloaded file
     file_name: string or None
         Name of downloaded file. If None, will be the last component of the URL
     url: string
-        URL to fetch
+        If speficied, the file will be fetched from this URL
     from_txt: string
         contents of file to create.
         One of `url` or `from_txt` must be specified
+    name: string
+        this field can be used to indicate the type of datafile being downloaded.
+        Usually, this is just informational. However, if you specify names `DESCR` or `LICENSE`,
+        the contents of this (text) file dataset description and license text, respectively.
 
     returns: dict
     """
