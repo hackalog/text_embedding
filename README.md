@@ -49,6 +49,10 @@ Project Organization
     * A default Sphinx project; see sphinx-doc.org for details
 * `models`
     * Trained and serialized models, model predictions, or model summaries
+    * `models/trained`
+        * Trained models
+    * `models/predictions`
+        * output of data flowed through trained models
 * `notebooks`
     *  Jupyter notebooks. Naming convention is a number (for ordering),
     the creator's initials, and a short `-` delimited description,
