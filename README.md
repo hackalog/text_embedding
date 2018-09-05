@@ -15,7 +15,20 @@ conda activate text_embedding
 ```
 make data
 ```
-* Explore the notebooks in the `notebooks` directory
+* Explore the notebooks in the `notebooks` directory.
+The rest of the workflow is typically:
+```
+make train
+make predict
+make analysis
+make summarize
+make publish
+```
+
+For a complete list of available targets, just type
+```
+make
+```
 
 Project Organization
 ------------
