@@ -69,6 +69,20 @@ def iter_flatten(iterable):
             yield i
 
 
+def sentences_to_wordlist(sentences, corpus=None, restrict_to_corpus=False):
+    """
+    Turn list of sentences into a wordlist.
+    """
+    X = [a for a in iter_flatten(sentences)]
+    X = np.unique(X)
+
+    if restrict_to_corpus:
+        wordlist = [x for x in X if x in corpus]
+    else:
+        wordlist = X
+    return wordlist
+
+
 class FastTextEstimator(BaseEstimator):
     """
     Estimator wrapper for gensim's FastText.
@@ -237,15 +251,14 @@ class FastTextEstimator(BaseEstimator):
         Here X is an iterable of sentences.
         """
         # XXX: Fix this later to properly use iterables
-        wl = [x for x in iter_flatten(X)]
+
         if restrict_to_corpus is not None:
             rtc = restrict_to_corpus
         else:
             rtc = self.restrict_to_corpus
-        if rtc:
-            wordlist = [x for x in wl if x in self.model_.wv.vocab]
-        else:
-            wordlist = wl
+        wordlist = sentences_to_wordlist(X, corpus=self.model_.wv.vocab,
+                                         restrict_to_corpus=rtc)
+
         self.last_transformed_wordlist_ = wordlist
         return(np.array([self.model_.wv.word_vec(i) for i in wordlist]))
 
@@ -257,10 +270,9 @@ class FastTextEstimator(BaseEstimator):
             rtc = restrict_to_corpus
         else:
             rtc = self.restrict_to_corpus
-        if rtc:
-            wordlist = [x for x in X if x in self.model_.wv.vocab]
-        else:
-            wordlist = X
+        wordlist = sentences_to_wordlist(X, corpus=self.model_.wv.vocab,
+                                         restrict_to_corpus=rtc)
+
         self.last_transformed_wordlist_ = wordlist
 
         return(np.array([self.model_.wv.word_vec(i) for i in wordlist]))
