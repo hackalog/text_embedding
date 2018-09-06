@@ -283,7 +283,6 @@ def unpack(filename, dst_dir=None, create_dst=True):
     else:
         opener, mode = open, 'rb'
         outfile, outmode = path, 'wb'
-        logger.info("No compression detected. Copying...")
 
     with opener(path, mode) as f_in:
         if archive:
@@ -291,6 +290,6 @@ def unpack(filename, dst_dir=None, create_dst=True):
             f_in.extractall(path=dst_dir)
         else:
             outfile = pathlib.Path(outfile).name
-            logger.info(f"Decompresing {outfile}")
+            logger.debug("No compression detected. Copying to {outfile}.")
             with open(pathlib.Path(dst_dir) / outfile, outmode) as f_out:
                 shutil.copyfileobj(f_in, f_out)
