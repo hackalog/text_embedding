@@ -56,7 +56,23 @@ def available_meta_estimators():
     return _META_ESTIMATORS
 
 
+def iter_flatten(iterable):
+    """
+    Helper function to flatten a list of lists.
+    """
+    items = iter(iterable)
+    for i in items:
+        if isinstance(i, (list, tuple)):
+            for j in iter_flatten(i):
+                yield j
+        else:
+            yield i
+
+
 class FastTextEstimator(BaseEstimator):
+    """
+    Estimator wrapper for gensim's FastText.
+    """
     def __init__(self, sg=0, hs=0, size=100, alpha=0.025, window=5,
                  min_count=5, max_vocab_size=None, word_ngrams=1, sample=1e-3,
                  seed=1, workers=3, min_alpha=0.0001, negative=5,
@@ -202,7 +218,9 @@ class FastTextEstimator(BaseEstimator):
         """
         # FastText is currently broken for iterables.
         X = list(X)
-        self.model_ = FastText(sentences=X, **self.get_params())
+        params = self.get_params().copy()
+        params.pop("restrict_to_corpus")
+        self.model_ = FastText(sentences=X, **params)
 
     def transform(self, X, y=None, restrict_to_corpus=None):
         """
@@ -219,7 +237,7 @@ class FastTextEstimator(BaseEstimator):
         Here X is an iterable of sentences.
         """
         # XXX: Fix this later to properly use iterables
-        wl = [x.split() for x in X]
+        wl = [x for x in iter_flatten(X)]
         if restrict_to_corpus is not None:
             rtc = restrict_to_corpus
         else:
@@ -227,15 +245,25 @@ class FastTextEstimator(BaseEstimator):
         if rtc:
             wordlist = [x for x in wl if x in self.model_.wv.vocab]
         else:
-            wordlist = wordlist
+            wordlist = wl
         self.last_transformed_wordlist_ = wordlist
         return(np.array([self.model_.wv.word_vec(i) for i in wordlist]))
 
-    def transform_words(self, X, y=None):
+    def transform_words(self, X, y=None, restrict_to_corpus=None):
         """
         X: iterable over a set of words to lookup within our model
         """
-        return(np.array([self.model_.wv.word_vec(i) for i in X]))
+        if restrict_to_corpus is not None:
+            rtc = restrict_to_corpus
+        else:
+            rtc = self.restrict_to_corpus
+        if rtc:
+            wordlist = [x for x in X if x in self.model_.wv.vocab]
+        else:
+            wordlist = X
+        self.last_transformed_wordlist_ = wordlist
+
+        return(np.array([self.model_.wv.word_vec(i) for i in wordlist]))
 
 #     def partial_fit(self, X, epochs=1, len_X=None):
 #         """
