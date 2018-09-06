@@ -8,6 +8,7 @@ from sklearn.model_selection import GridSearchCV
 _ALGORITHMS = {
 }
 
+
 def available_algorithms():
     """Valid Algorithms for training or prediction
 
@@ -32,6 +33,7 @@ _META_ESTIMATORS = {
     'grid_search': GridSearchCV
 }
 
+
 def available_meta_estimators():
     """Valid Meta-estimators for training or prediction
     This function simply returns the list of known
@@ -53,11 +55,15 @@ def available_meta_estimators():
     """
     return _META_ESTIMATORS
 
+
 class FastTextEstimator(BaseEstimator):
-    def __init__(self, sg=0, hs=0, size=100, alpha=0.025, window=5, min_count=5,
-                 max_vocab_size=None, word_ngrams=1, sample=1e-3, seed=1, workers=3, min_alpha=0.0001,
-                 negative=5, ns_exponent=0.75, cbow_mean=1, hashfxn=hash, iter=5, null_word=0, min_n=3, max_n=6,
-                 sorted_vocab=1, bucket=2000000, trim_rule=None, batch_words=MAX_WORDS_IN_BATCH, callbacks=()):
+    def __init__(self, sg=0, hs=0, size=100, alpha=0.025, window=5,
+                 min_count=5, max_vocab_size=None, word_ngrams=1, sample=1e-3,
+                 seed=1, workers=3, min_alpha=0.0001, negative=5,
+                 ns_exponent=0.75, cbow_mean=1, hashfxn=hash, iter=5,
+                 null_word=0, min_n=3, max_n=6, sorted_vocab=1, bucket=2000000,
+                 trim_rule=None, batch_words=MAX_WORDS_IN_BATCH, callbacks=(),
+                 restrict_to_corpus=True):
         """
 
         Parameters
@@ -148,35 +154,37 @@ class FastTextEstimator(BaseEstimator):
             memory usage of the model. This option specifies the number of buckets used by the model.
         callbacks : :obj: `list` of :obj: `~gensim.models.callbacks.CallbackAny2Vec`, optional
             List of callbacks that need to be executed/run at specific stages during training.
+        restrict_to_corpus : boolean
+            Necessarily restrict all lookups to the corpus that already exists within the fit model.
         """
 
         #self.sentences = sentences
         self.sg = sg
-        self.hs =hs
-        self.size=size
-        self.alpha=alpha
-        self.window=window
-        self.min_count=min_count
-        self.max_vocab_size=max_vocab_size
-        self.word_ngrams=word_ngrams
-        self.sample=sample
-        self.seed=seed
-        self.workers=workers
-        self.min_alpha=min_alpha
-        self.negative=negative
-        self.ns_exponent=ns_exponent
-        self.cbow_mean=cbow_mean
-        self.hashfxn=hashfxn
-        self.iter=iter
-        self.null_word=null_word
-        self.min_n=min_n
-        self.max_n=max_n
-        self.sorted_vocab=sorted_vocab
-        self.bucket=bucket
-        self.trim_rule=trim_rule
-        self.batch_words=batch_words
-        self.callbacks=callbacks
-        #I hate you all
+        self.hs = hs
+        self.size = size
+        self.alpha = alpha
+        self.window = window
+        self.min_count = min_count
+        self.max_vocab_size = max_vocab_size
+        self.word_ngrams = word_ngrams
+        self.sample = sample
+        self.seed = seed
+        self.workers = workers
+        self.min_alpha = min_alpha
+        self.negative = negative
+        self.ns_exponent = ns_exponent
+        self.cbow_mean = cbow_mean
+        self.hashfxn = hashfxn
+        self.iter = iter
+        self.null_word = null_word
+        self.min_n = min_n
+        self.max_n = max_n
+        self.sorted_vocab = sorted_vocab
+        self.bucket = bucket
+        self.trim_rule = trim_rule
+        self.batch_words = batch_words
+        self.callbacks = callbacks
+        self.restrict_to_corpus = restrict_to_corpus
 
     def fit(self, X):
         """
@@ -184,17 +192,46 @@ class FastTextEstimator(BaseEstimator):
         ----------
         X : iterable of list of str, optional
             Can be simply a list of lists of tokens, but for larger corpora,
-            consider an iterable that streams the sentences directly from disk/network.
-            See :class:`~gensim.models.word2vec.BrownCorpus`, :class:`~gensim.models.word2vec.Text8Corpus`
-            or :class:`~gensim.models.word2vec.LineSentence` in :mod:`~gensim.models.word2vec` module for such examples.
+            consider an iterable that streams the sentences directly from
+            disk/network.
+            See :class:`~gensim.models.word2vec.BrownCorpus`,
+                :class:`~gensim.models.word2vec.Text8Corpus`
+            or :class:`~gensim.models.word2vec.LineSentence` in
+            :mod:`~gensim.models.word2vec` module for such examples.
         Here X is an iterable of sentences.
         """
-        X=list(X) # FastText is currently broken for iterables.
-        self.model_ = FastText(sentences=X,**self.get_params())
+        # FastText is currently broken for iterables.
+        X = list(X)
+        self.model_ = FastText(sentences=X, **self.get_params())
 
+    def transform(self, X, y=None, restrict_to_corpus=None):
+        """
+        Parameters
+        ----------
+        X : iterable of list of str, optional
+            Can be simply a list of lists of tokens, but for larger corpora,
+            consider an iterable that streams the sentences directly from
+            disk/network.
+            See :class:`~gensim.models.word2vec.BrownCorpus`,
+                :class:`~gensim.models.word2vec.Text8Corpus`
+            or :class:`~gensim.models.word2vec.LineSentence` in
+            :mod:`~gensim.models.word2vec` module for such examples.
+        Here X is an iterable of sentences.
+        """
+        # XXX: Fix this later to properly use iterables
+        wl = [x.split() for x in X]
+        if restrict_to_corpus is not None:
+            rtc = restrict_to_corpus
+        else:
+            rtc = self.restrict_to_corpus
+        if rtc:
+            wordlist = [x for x in wl if x in self.model_.wv.vocab]
+        else:
+            wordlist = wordlist
+        self.last_transformed_wordlist_ = wordlist
+        return(np.array([self.model_.wv.word_vec(i) for i in wordlist]))
 
-
-    def transform(self, X, y=None):
+    def transform_words(self, X, y=None):
         """
         X: iterable over a set of words to lookup within our model
         """
