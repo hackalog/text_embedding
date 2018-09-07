@@ -3,4 +3,5 @@ from .dset import *
 from .fetch import *
 from .localdata import *
 from .utils import *
+from .estimators import *
 

@@ -5,6 +5,8 @@ import spacy
 
 from ..logging import logger
 
+__all__ = ['SpacyTokenize']
+
 class SpacyTokenize(BaseEstimator):
     def __init__(self, n_threads=4, batch_size=50,
                  stopwords=None, punctuation=None, lemmatize=False,
