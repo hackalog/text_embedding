@@ -1,3 +1,8 @@
+#In order to make use of this create a new Estimator with a fit and transform
+#function.
+#Then add that estimator to the _ALGORITHMS dictionary at the end of this
+#script.
+
 from gensim.models.fasttext import MAX_WORDS_IN_BATCH
 from sklearn.base import BaseEstimator
 from gensim.models import FastText
@@ -5,55 +10,7 @@ import numpy as np
 
 from sklearn.model_selection import GridSearchCV
 
-_ALGORITHMS = {
-}
 
-
-def available_algorithms():
-    """Valid Algorithms for training or prediction
-
-    This function simply returns a dict of known
-    algorithms strings and their corresponding estimator function.
-
-    It exists to allow for a description of the mapping for
-    each of the valid strings as a docstring
-
-    The valid algorithm names, and the function they map to, are:
-
-    ============     ====================================
-    Algorithm        Function
-    ============     ====================================
-
-    ============     ====================================
-    """
-    return _ALGORITHMS
-
-
-_META_ESTIMATORS = {
-    'grid_search': GridSearchCV
-}
-
-
-def available_meta_estimators():
-    """Valid Meta-estimators for training or prediction
-    This function simply returns the list of known
-    meta-estimators
-
-    This function simply returns a dict of known
-    algorithms strings and their corresponding estimator function.
-
-    It exists to allow for a description of the mapping for
-    each of the valid strings as a docstring
-
-    The valid algorithm names, and the function they map to, are:
-
-    ============     ====================================
-    Meta-est         Function
-    ============     ====================================
-    grid_search      sklearn.model_selection.GridSearchCV
-    ============     ====================================
-    """
-    return _META_ESTIMATORS
 
 
 def iter_flatten(iterable):
@@ -295,3 +252,24 @@ class FastTextEstimator(BaseEstimator):
 #             self.fit(X)
 #         else:
 #             self.model_.train(sentences= X,epochs=1, total_examples=len_X)
+
+_ALGORITHMS = {'fasttext':FastTextEstimator
+}
+def available_algorithms():
+    """Valid Algorithms for training or prediction
+
+    This function simply returns a dict of known
+    algorithms strings and their corresponding estimator function.
+
+    It exists to allow for a description of the mapping for
+    each of the valid strings as a docstring
+
+    The valid algorithm names, and the function they map to, are:
+
+    ============     ====================================
+    Algorithm        Function
+    ============     ====================================
+    fasttext            FastTextEstimator
+    ============     ====================================
+    """
+    return _ALGORITHMS
