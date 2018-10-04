@@ -46,7 +46,7 @@ class FastTextEstimator(BaseEstimator):
     """
     def __init__(self, sg=0, hs=0, size=100, alpha=0.025, window=5,
                  min_count=5, max_vocab_size=None, word_ngrams=1, sample=1e-3,
-                 seed=1, workers=3, min_alpha=0.0001, negative=5,
+                 random_state=42, workers=3, min_alpha=0.0001, negative=5,
                  ns_exponent=0.75, cbow_mean=1, hashfxn=hash, iter=5,
                  null_word=0, min_n=3, max_n=6, sorted_vocab=1, bucket=2000000,
                  trim_rule=None, batch_words=MAX_WORDS_IN_BATCH, callbacks=(),
@@ -79,7 +79,7 @@ class FastTextEstimator(BaseEstimator):
         hs : {1,0}, optional
             If 1, hierarchical softmax will be used for model training.
             If set to 0, and `negative` is non-zero, negative sampling will be used.
-        seed : int, optional
+        random_state : int, optional
             Seed for the random number generator. Initial vectors for each word are seeded with a hash of
             the concatenation of word + `str(seed)`. Note that for a fully deterministically-reproducible run,
             you must also limit the model to a single worker thread (`workers=1`), to eliminate ordering jitter
@@ -155,7 +155,7 @@ class FastTextEstimator(BaseEstimator):
         self.max_vocab_size = max_vocab_size
         self.word_ngrams = word_ngrams
         self.sample = sample
-        self.seed = seed
+        self.random_state = random_state
         self.workers = workers
         self.min_alpha = min_alpha
         self.negative = negative
@@ -191,7 +191,8 @@ class FastTextEstimator(BaseEstimator):
         X = list(X)
         params = self.get_params().copy()
         params.pop("restrict_to_corpus")
-        self.model_ = FastText(sentences=X, **params)
+        seed = params.pop('random_state')
+        self.model_ = FastText(sentences=X, seed=seed, **params)
 
     def transform(self, X, y=None, restrict_to_corpus=None):
         """
