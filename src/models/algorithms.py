@@ -1,3 +1,8 @@
+#In order to make use of this create a new Estimator with a fit and transform
+#function.
+#Then add that estimator to the _ALGORITHMS dictionary at the end of this
+#script.
+
 from gensim.models.fasttext import MAX_WORDS_IN_BATCH
 from sklearn.base import BaseEstimator
 from gensim.models import FastText
@@ -5,55 +10,7 @@ import numpy as np
 
 from sklearn.model_selection import GridSearchCV
 
-_ALGORITHMS = {
-}
 
-
-def available_algorithms():
-    """Valid Algorithms for training or prediction
-
-    This function simply returns a dict of known
-    algorithms strings and their corresponding estimator function.
-
-    It exists to allow for a description of the mapping for
-    each of the valid strings as a docstring
-
-    The valid algorithm names, and the function they map to, are:
-
-    ============     ====================================
-    Algorithm        Function
-    ============     ====================================
-
-    ============     ====================================
-    """
-    return _ALGORITHMS
-
-
-_META_ESTIMATORS = {
-    'grid_search': GridSearchCV
-}
-
-
-def available_meta_estimators():
-    """Valid Meta-estimators for training or prediction
-    This function simply returns the list of known
-    meta-estimators
-
-    This function simply returns a dict of known
-    algorithms strings and their corresponding estimator function.
-
-    It exists to allow for a description of the mapping for
-    each of the valid strings as a docstring
-
-    The valid algorithm names, and the function they map to, are:
-
-    ============     ====================================
-    Meta-est         Function
-    ============     ====================================
-    grid_search      sklearn.model_selection.GridSearchCV
-    ============     ====================================
-    """
-    return _META_ESTIMATORS
 
 
 def iter_flatten(iterable):
@@ -89,7 +46,7 @@ class FastTextEstimator(BaseEstimator):
     """
     def __init__(self, sg=0, hs=0, size=100, alpha=0.025, window=5,
                  min_count=5, max_vocab_size=None, word_ngrams=1, sample=1e-3,
-                 seed=1, workers=3, min_alpha=0.0001, negative=5,
+                 random_state=42, workers=3, min_alpha=0.0001, negative=5,
                  ns_exponent=0.75, cbow_mean=1, hashfxn=hash, iter=5,
                  null_word=0, min_n=3, max_n=6, sorted_vocab=1, bucket=2000000,
                  trim_rule=None, batch_words=MAX_WORDS_IN_BATCH, callbacks=(),
@@ -122,7 +79,7 @@ class FastTextEstimator(BaseEstimator):
         hs : {1,0}, optional
             If 1, hierarchical softmax will be used for model training.
             If set to 0, and `negative` is non-zero, negative sampling will be used.
-        seed : int, optional
+        random_state : int, optional
             Seed for the random number generator. Initial vectors for each word are seeded with a hash of
             the concatenation of word + `str(seed)`. Note that for a fully deterministically-reproducible run,
             you must also limit the model to a single worker thread (`workers=1`), to eliminate ordering jitter
@@ -198,7 +155,7 @@ class FastTextEstimator(BaseEstimator):
         self.max_vocab_size = max_vocab_size
         self.word_ngrams = word_ngrams
         self.sample = sample
-        self.seed = seed
+        self.random_state = random_state
         self.workers = workers
         self.min_alpha = min_alpha
         self.negative = negative
@@ -234,7 +191,8 @@ class FastTextEstimator(BaseEstimator):
         X = list(X)
         params = self.get_params().copy()
         params.pop("restrict_to_corpus")
-        self.model_ = FastText(sentences=X, **params)
+        seed = params.pop('random_state')
+        self.model_ = FastText(sentences=X, seed=seed, **params)
 
     def transform(self, X, y=None, restrict_to_corpus=None):
         """
@@ -295,3 +253,24 @@ class FastTextEstimator(BaseEstimator):
 #             self.fit(X)
 #         else:
 #             self.model_.train(sentences= X,epochs=1, total_examples=len_X)
+
+_ALGORITHMS = {'fasttext':FastTextEstimator
+}
+def available_algorithms():
+    """Valid Algorithms for training or prediction
+
+    This function simply returns a dict of known
+    algorithms strings and their corresponding estimator function.
+
+    It exists to allow for a description of the mapping for
+    each of the valid strings as a docstring
+
+    The valid algorithm names, and the function they map to, are:
+
+    ============     ====================================
+    Algorithm        Function
+    ============     ====================================
+    fasttext            FastTextEstimator
+    ============     ====================================
+    """
+    return _ALGORITHMS
