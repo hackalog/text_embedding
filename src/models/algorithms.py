@@ -45,14 +45,14 @@ class FastTextEstimator(BaseEstimator):
     Estimator wrapper for gensim's FastText.
     """
     def __init__(self, sg=0, hs=0, size=100, alpha=0.025, window=5,
-                 min_count=5, max_vocab_size=None, word_ngrams=1, sample=1e-3,
+                 min_count=5, max_vocab_size=None, word_ngrams=1, sample=0.001,
                  random_state=42, workers=3, min_alpha=0.0001, negative=5,
-                 ns_exponent=0.75, cbow_mean=1, hashfxn=hash, iter=5,
+                 cbow_mean=1, hashfxn=None, iter=5,
                  null_word=0, min_n=3, max_n=6, sorted_vocab=1, bucket=2000000,
                  trim_rule=None, batch_words=MAX_WORDS_IN_BATCH, callbacks=(),
                  restrict_to_corpus=True):
-        """
 
+        """
         Parameters
         ----------
         sentences : iterable of list of str, optional
@@ -96,12 +96,6 @@ class FastTextEstimator(BaseEstimator):
             If > 0, negative sampling will be used, the int for negative specifies how many "noise words"
             should be drawn (usually between 5-20).
             If set to 0, no negative sampling is used.
-        ns_exponent : float, optional
-            The exponent used to shape the negative sampling distribution. A value of 1.0 samples exactly in proportion
-            to the frequencies, 0.0 samples all words equally, while a negative value samples low-frequency words more
-            than high-frequency words. The popular default value of 0.75 was chosen by the original Word2Vec paper.
-            More recently, in https://arxiv.org/abs/1804.04212, Caselles-Dupré, Lesaint, & Royo-Letelier suggest that
-            other values may perform better for recommendation applications.
         cbow_mean : {1,0}, optional
             If 0, use the sum of the context word vectors. If 1, use the mean, only applies when cbow is used.
         hashfxn : function, optional
@@ -159,7 +153,6 @@ class FastTextEstimator(BaseEstimator):
         self.workers = workers
         self.min_alpha = min_alpha
         self.negative = negative
-        self.ns_exponent = ns_exponent
         self.cbow_mean = cbow_mean
         self.hashfxn = hashfxn
         self.iter = iter
@@ -192,7 +185,11 @@ class FastTextEstimator(BaseEstimator):
         params = self.get_params().copy()
         params.pop("restrict_to_corpus")
         seed = params.pop('random_state')
-        self.model_ = FastText(sentences=X, seed=seed, **params)
+        hashfxn = params.pop('hashfxn')
+        if hashfxn is None:
+            self.model_ = FastText(sentences=X, seed=seed, **params)
+        else:
+            self.model_ = FastText(sentences=X, seed=seed, hashfxn=hashfxn, **params)
 
     def transform(self, X, y=None, restrict_to_corpus=None):
         """
