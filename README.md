@@ -8,7 +8,7 @@ GETTING STARTED
 
 * Create and switch to the  virtual environment:
 ```
-make create environment
+make create_environment
 conda activate text_embedding
 ```
 * Fetch the raw data and process it into a usable form
