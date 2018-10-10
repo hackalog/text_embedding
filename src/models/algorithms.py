@@ -254,8 +254,12 @@ class FastTextEstimator(BaseEstimator):
 #         else:
 #             self.model_.train(sentences= X,epochs=1, total_examples=len_X)
 
-_ALGORITHMS = {'fasttext':FastTextEstimator
+
+_ALGORITHMS = {
+    'fasttext': FastTextEstimator()
 }
+
+
 def available_algorithms():
     """Valid Algorithms for training or prediction
 
